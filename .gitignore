@@ -1,0 +1,5 @@
+data/
+dist/
+*.pdf
+.DS_Store
+Thumbs.db

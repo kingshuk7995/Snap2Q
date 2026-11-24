@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snap2Q — Interactive Practice</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <button id="btn-sidebar" class="icon-btn" title="Question Navigator (G)" aria-label="Toggle Navigator">☰</button>
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <h1>Pharmacology QBank</h1>
+      </div>
+      <div class="mode-switch" role="group" aria-label="Study Mode">
+        <button id="mode-practice" class="mode-btn active" data-mode="practice">Practice</button>
+        <button id="mode-exam" class="mode-btn" data-mode="exam">Exam</button>
+      </div>
+    </div>
+
+    <div class="topbar-center">
+      <div class="stat-pill" title="Attempted">
+        <span class="stat-label">Done</span>
+        <strong id="stat-done">0/0</strong>
+      </div>
+      <div class="stat-pill stat-good" title="Accuracy">
+        <span class="stat-label">Accuracy</span>
+        <strong id="stat-acc">—</strong>
+      </div>
+      <div class="stat-pill stat-timer hidden" id="exam-timer-pill" title="Exam Timer">
+        <span class="stat-label">Time</span>
+        <strong id="exam-timer">00:00</strong>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <select id="filter-select" class="select-ctrl" aria-label="Filter questions">
+        <option value="all">All Questions</option>
+        <option value="unattempted">Unattempted</option>
+        <option value="incorrect">Incorrect Only</option>
+        <option value="correct">Correct Only</option>
+        <option value="bookmarked">Bookmarked</option>
+        <option value="diagram">With Diagrams</option>
+      </select>
+      <button id="btn-shuffle" class="chip-btn" title="Shuffle order">⇄ Shuffle</button>
+      <button id="btn-theme" class="icon-btn" title="Toggle Dark Mode">☾</button>
+      <button id="btn-reset" class="icon-btn" title="Settings & Progress">⚙</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div>
+          <strong>Navigator</strong>
+          <span id="nav-count" class="muted">0 items</span>
+        </div>
+        <div class="jump-row">
+          <input id="jump-input" type="number" min="1" placeholder="Q# or Page" />
+          <button id="jump-q-btn" class="mini-btn" title="Jump to Question ID">Go Q#</button>
+          <button id="jump-p-btn" class="mini-btn" title="Jump to PDF Page">Page</button>
+        </div>
+      </div>
+
+      <div class="sidebar-pager">
+        <button id="nav-prev-page" class="mini-btn">‹ Prev 100</button>
+        <span id="nav-page-label" class="muted">1–100</span>
+        <button id="nav-next-page" class="mini-btn">Next 100 ›</button>
+      </div>
+
+      <div id="nav-grid" class="nav-grid"></div>
+    </aside>
+
+    <main class="main">
+      <div id="loading-state" class="state-card">
+        <div class="spinner"></div>
+        <p>Loading Pharmacology QBank…</p>
+      </div>
+
+      <div id="empty-state" class="state-card hidden">
+        <h2>No questions match this filter</h2>
+        <p class="muted">Try switching the filter back to "All Questions".</p>
+        <button id="btn-clear-filter" class="primary-btn">Show All Questions</button>
+      </div>
+
+      <article id="quiz-container" class="quiz-container hidden">
+        <div class="question-meta">
+          <div class="meta-left">
+            <span id="q-badge" class="badge">Q #1</span>
+            <span id="q-page-badge" class="badge badge-subtle">PDF Page 1</span>
+            <span id="q-diagram-badge" class="badge badge-accent hidden">📊 Diagram</span>
+            <span id="q-position" class="muted">1 of 1</span>
+          </div>
+          <div class="meta-right">
+            <button id="btn-bookmark" class="chip-btn" title="Bookmark (S)">☆ Bookmark</button>
+            <button id="btn-zoom-q" class="chip-btn" title="Zoom Question (Z)">🔍 Zoom</button>
+          </div>
+        </div>
+
+        <section class="card image-card">
+          <img id="q-image" alt="Question and options" decoding="async" />
+        </section>
+
+        <section class="answer-bar">
+          <div id="options-row" class="options-row">
+            <button class="opt-btn" data-opt="A"><kbd>A</kbd> Option A</button>
+            <button class="opt-btn" data-opt="B"><kbd>B</kbd> Option B</button>
+            <button class="opt-btn" data-opt="C"><kbd>C</kbd> Option C</button>
+            <button class="opt-btn" data-opt="D"><kbd>D</kbd> Option D</button>
+          </div>
+
+          <div id="feedback-banner" class="feedback-banner hidden"></div>
+
+          <div class="action-row">
+            <button id="btn-prev" class="nav-btn">← Previous</button>
+            <div class="action-center">
+              <button id="btn-toggle-exp" class="chip-btn hidden">Show Explanation (E)</button>
+              <button id="btn-submit-exam" class="primary-btn hidden">Submit Exam</button>
+            </div>
+            <button id="btn-next" class="nav-btn primary-nav">Next →</button>
+          </div>
+        </section>
+
+        <section id="explanation-section" class="card explanation-card hidden">
+          <div class="exp-header">
+            <h3>Explanation &amp; Reference</h3>
+            <button id="btn-zoom-e" class="chip-btn">🔍 Zoom Explanation</button>
+          </div>
+          <img id="e-image" alt="Explanation and reference" decoding="async" />
+        </section>
+
+        <section class="card notes-card">
+          <label for="q-notes" class="notes-label">Personal Note (auto-saved)</label>
+          <textarea id="q-notes" rows="2" placeholder="Add a mnemonic, pearl, or reminder for this question…"></textarea>
+        </section>
+      </article>
+    </main>
+  </div>
+
+  <!-- Lightbox Modal for zooming diagrams -->
+  <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true">
+    <button id="lightbox-close" class="lightbox-close" aria-label="Close Zoom">✕</button>
+    <div class="lightbox-scroll">
+      <img id="lightbox-img" alt="Zoomed view" />
+    </div>
+  </div>
+
+  <!-- Settings / Stats Modal -->
+  <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Progress &amp; Shortcuts</h2>
+        <button id="modal-close" class="icon-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-grid">
+          <div class="stat-box"><span class="muted">Total</span><strong id="m-total">0</strong></div>
+          <div class="stat-box"><span class="muted">Correct</span><strong id="m-correct" class="txt-good">0</strong></div>
+          <div class="stat-box"><span class="muted">Incorrect</span><strong id="m-wrong" class="txt-bad">0</strong></div>
+          <div class="stat-box"><span class="muted">Bookmarked</span><strong id="m-bookmarked">0</strong></div>
+        </div>
+
+        <div class="shortcuts-box">
+          <h4>Keyboard Shortcuts</h4>
+          <ul>
+            <li><kbd>A</kbd> <kbd>B</kbd> <kbd>C</kbd> <kbd>D</kbd> or <kbd>1</kbd>–<kbd>4</kbd> — Pick answer</li>
+            <li><kbd>←</kbd> / <kbd>→</kbd> — Previous / Next question</li>
+            <li><kbd>E</kbd> — Toggle explanation</li>
+            <li><kbd>S</kbd> — Bookmark question</li>
+            <li><kbd>Z</kbd> — Zoom question / diagram</li>
+            <li><kbd>Esc</kbd> — Close zoom or dialog</li>
+          </ul>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-export-progress" class="chip-btn">⬇ Export JSON</button>
+          <button id="btn-import-progress" class="chip-btn">⬆ Import JSON</button>
+          <input id="import-file-input" type="file" accept="application/json,.json" class="hidden" />
+        </div>
+        <div class="modal-actions">
+          <button id="btn-reset-responses" class="warn-btn">↺ Reset All Responses</button>
+          <button id="btn-clear-progress" class="danger-btn">Reset Everything</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
